@@ -1,13 +1,14 @@
 """Interfaces to Readline DLLs."""
+from __future__ import unicode_literals
+
 from ctypes import *  # pylint: disable=wildcard-import,unused-wildcard-import
 import logging
 import msvcrt
 import time
 
 from . import callback_mananger
+from . import strings
 from . import typedefs
-
-SIGINT = 2
 
 
 class Readline(object):
@@ -32,7 +33,7 @@ class Readline(object):
         self._input_complete = False
 
         # String constant we need to keep a reference to
-        self._PYTHON = 'python'
+        self._PYTHON = b'python'
 
         self._old_inthandler = None
 
@@ -42,6 +43,7 @@ class Readline(object):
 
     def _initreadline(self):
         """See readline.c: PyInit_readline."""
+        self.logger.debug('installing readline function pointer')
         call_readline = typedefs.PyOS_ReadlineFunctionPointer_t(
             self._call_readline)
         self.py_cbmanager.install('PyOS_ReadlineFunctionPointer',
@@ -52,6 +54,7 @@ class Readline(object):
         """See readline.c: call_readline."""
         # stdin/stdout will be used eventually
         # pylint: disable=unused-argument
+        self.logger.debug('calling readline with prompt: %s', prompt)
         # FUTURE: save/restore locale?
         # FUTURE: this bit is specific to my readline DLL; move into subclass
         # ???: Not sure what the deal is here...
@@ -75,19 +78,23 @@ class Readline(object):
             return None
         if line is None:
             # We got an EOF; return an empty string
-            line = ''
+            line = b''
         else:
             if line:
                 history_length = self.get_current_history_length()
                 last = self.get_history_item(history_length)
+                self.logger.debug('previous history item: %s', last)
                 if line != last:
-                    self.add_history(line)
-            line += '\n'
+                    self.logger.debug('adding item to history: %s', line)
+                    self.dll.add_history(line)
+            line += b'\n'
+        self.logger.debug('allocating copy of line: %s', line)
         # line must be allocated with PyMem_Malloc
         size = len(line) + 1
+        pythonapi.PyMem_Malloc.restype = c_void_p
         linecopy = pythonapi.PyMem_Malloc(size)
         cdll.msvcrt.memcpy(linecopy, line, size)
-        cdll.msvcrt.free(line)
+        self.logger.debug('returning copy of line: %s', linecopy)
         return linecopy
 
     def _readline_until_enter_or_signal(self, prompt):
@@ -113,8 +120,10 @@ class Readline(object):
                         break
                     if input_hook:
                         cast(input_hook, typedefs.PyOS_InputHook_t)()
+                self.logger.debug('reading single character')
                 self.dll.rl_callback_read_char()
         except KeyboardInterrupt:
+            self.logger.debug('cleaning up after KeyboardInterrupt')
             self.dll.rl_free_line_state()
             self.dll.rl_cleanup_after_signal()
             self.dll.rl_callback_handler_remove()
@@ -124,7 +133,12 @@ class Readline(object):
     def _rlhandler(self, text):
         """See readline.c: rlhandler."""
         self.dll.rl_callback_handler_remove()
-        self._completed_input_string = text
+        # Get the string value for Python internal use
+        self._completed_input_string = cast(text, c_char_p).value
+        self.logger.debug('received input line: %s',
+                          self._completed_input_string)
+        # Free memory allocated by Readline
+        cdll.msvcrt.free(text)
         self._input_complete = True
 
     @staticmethod
@@ -153,13 +167,13 @@ class Readline(object):
         cdll.msvcrt.getenv.argtypes = [c_char_p]
         # don't automatically convert return type
         cdll.msvcrt.getenv.restype = c_void_p
-        term = cdll.msvcrt.getenv('TERM')
+        term = cdll.msvcrt.getenv(b'TERM')
         c_char_p.in_dll(self.dll, 'rl_terminal_name').value = term
         self.parse_and_bind('tab: tab-insert')
         self.dll.rl_bind_key_in_map.argtypes = [c_char, c_void_p, c_void_p]
-        self.dll.rl_bind_key_in_map('\t', self.dll.rl_complete,
+        self.dll.rl_bind_key_in_map(b'\t', self.dll.rl_complete,
                                     self.dll.emacs_meta_keymap)
-        self.dll.rl_bind_key_in_map('\033', self.dll.rl_complete,
+        self.dll.rl_bind_key_in_map(b'\033', self.dll.rl_complete,
                                     self.dll.emacs_meta_keymap)
         on_startup_hook = typedefs.rl_hook_func_t(self._on_startup_hook)
         self.rl_cbmanager.install('rl_startup_hook', on_startup_hook)
@@ -173,29 +187,35 @@ class Readline(object):
 
     def _on_startup_hook(self):
         """See readline.c: on_startup_hook."""
+        self.logger.debug('calling startup hook')
         return self._on_hook(self._startup_hook)
 
     def _on_pre_input_hook(self):
         """See readline.c: on_pre_input_hook."""
+        self.logger.debug('calling pre-input hook')
         return self._on_hook(self._pre_input_hook)
 
-    @staticmethod
-    def _on_hook(hook):
+    def _on_hook(self, hook):
         """See readline.c: on_hook."""
         if hook:
             try:
-                return hook()
+                return int(hook())
             except Exception:  # pylint: disable=broad-except
+                self.logger.debug('exception in hook')
                 return -1
         return 0
 
     def _flex_complete(self, text, start, end):
         """See readline.c: flex_complete."""
-        c_char.in_dll(self.dll, 'rl_completion_append_character').value = '\0'
+        c_char.in_dll(self.dll, 'rl_completion_append_character').value = b'\0'
         c_int.in_dll(self.dll, 'rl_completion_suppress_append').value = 0
         self._begidx = start
         self._endidx = end
         on_completion = typedefs.rl_compentry_func_t(self._on_completion)
+        self.logger.debug('calling completion matches: %s', text)
+        self.dll.rl_completion_matches.argtypes = \
+            [c_char_p, typedefs.rl_compentry_func_t]
+        self.dll.rl_completion_matches.restype = c_void_p
         return self.dll.rl_completion_matches(text, on_completion)
 
     def _on_completion(self, text, state):
@@ -203,25 +223,37 @@ class Readline(object):
         if self._completer:
             c_int.in_dll(self.dll, 'rl_attempted_completion_over').value = 1
             try:
+                text = strings.decode(text)
+                self.logger.debug('calling completer: %s, %d', text, state)
                 result = self._completer(text, state)
+                if result is None:
+                    self.logger.debug('completer returned None')
+                    return None
+                result = strings.encode(result)
+                self.logger.debug('returning completion: %s', result)
                 return self._strdup(result)
             except Exception:  # pylint: disable=broad-except
-                pass
+                self.logger.debug('exception calling completer')
         return None
 
     def parse_and_bind(self, string):
         """Parse and execute single line of a readline init file."""
         # rl_parse_and_bind modifies its input
+        string = strings.encode(string)
+        self.logger.debug('string to parse: %s', string)
         cstring = create_string_buffer(string)
         self.dll.argtypes = [c_char_p]
         self.dll.rl_parse_and_bind(cstring)
 
     def get_line_buffer(self):
         """Return the current contents of the line buffer."""
-        return c_char_p.in_dll(self.dll, 'rl_line_buffer').value
+        line_buffer = c_char_p.in_dll(self.dll, 'rl_line_buffer').value
+        return strings.decode(line_buffer)
 
     def insert_text(self, text):
         """Insert text into the command line."""
+        text = strings.encode(text)
+        self.logger.debug('inserting text: %s', text)
         self.dll.rl_insert_text.argtypes = [c_char_p]
         self.dll.rl_insert_text(text)
 
@@ -229,6 +261,9 @@ class Readline(object):
         """Parse a readline initialization file. The default filename
         is the last filename used.
         """
+        if filename is not None:
+            filename = strings.encode(filename)
+        self.logger.debug('reading init file: %s', filename)
         self.dll.rl_read_init_file.argtypes = [c_char_p]
         self.dll.rl_read_init_file.restype = c_int
         errno = self.dll.rl_read_init_file(filename)
@@ -239,6 +274,9 @@ class Readline(object):
         """Load a readline history file. The default filename is
         ~/.history.
         """
+        if filename is not None:
+            filename = strings.encode(filename)
+        self.logger.debug('reading history file: %s', filename)
         self.dll.read_history.argtypes = [c_char_p]
         self.dll.read_history.restype = c_int
         errno = self.dll.read_history(filename)
@@ -249,17 +287,22 @@ class Readline(object):
         """Save a readline history file. The default filename is
         ~/.history.
         """
+        if filename is not None:
+            filename = strings.encode(filename)
+        self.logger.debug('writing history file: %s', filename)
         self.dll.write_history.argtypes = [c_char_p]
         self.dll.write_history.restype = c_int
         errno = self.dll.write_history(filename)
         if errno:
             raise IOError(errno)
         if self._history_length >= 0:
+            self.logger.debug('truncating history file')
             self.dll.history_truncate_file.argtypes = [c_char_p, c_int]
             self.dll.history_truncate_file(filename, self._history_length)
 
     def clear_history(self):
         """Clear the current history."""
+        self.logger.debug('clearing history')
         self.dll.clear_history()
 
     def get_history_length(self):
@@ -289,10 +332,13 @@ class Readline(object):
         self.dll.history_get.argtypes = [c_int]
         self.dll.history_get.restype = POINTER(typedefs.HIST_ENTRY)
         p_hist_entry = self.dll.history_get(index)
-        line = None
         if p_hist_entry:
-            line = p_hist_entry[0].line
-        return line
+            # No free conversion of line because we need to get the raw
+            # pointer value in other situations.
+            line = cast(p_hist_entry[0].line, c_char_p).value
+            return strings.decode(line)
+        else:
+            return None
 
     def remove_history_item(self, pos):
         """Remove history item specified by its position from the
@@ -311,10 +357,12 @@ class Readline(object):
         """Replace history item specified by its position with the
         given line.
         """
+        line = strings.encode(line)
+        self.logger.debug('replacing history item: %s', line)
         if pos < 0:
             raise ValueError('History index cannot be negative')
-        self.dll.replace_history.argtypes = [c_int, c_int, c_void_p]
-        self.dll.replace_history.restype = POINTER(typedefs.HIST_ENTRY)
+        self.dll.replace_history_entry.argtypes = [c_int, c_char_p, c_void_p]
+        self.dll.replace_history_entry.restype = POINTER(typedefs.HIST_ENTRY)
         p_hist_entry = self.dll.replace_history_entry(pos, line, None)
         if p_hist_entry is None:
             raise ValueError('No history item at position {}'.format(pos))
@@ -349,7 +397,7 @@ class Readline(object):
         before readline starts reading input characters."""
         self._pre_input_hook = function
 
-    def set_completer(self, func):
+    def set_completer(self, function=None):
         """Set or remove the completer function. If function is
         specified, it will be used as the new completer function; if
         omitted or None, any completer function already installed is
@@ -358,7 +406,7 @@ class Readline(object):
         returns a non-string value. It should return the next possible
         completion starting with text.
         """
-        self._completer = func
+        self._completer = function
 
     def get_completer(self):
         """Get the completer function, or None if no completer function
@@ -368,7 +416,8 @@ class Readline(object):
 
     def get_completion_type(self):
         """Get the type of completion being attempted."""
-        return c_char.in_dll(self.dll, 'rl_completion_type').value
+        completion_type = c_char.in_dll(self.dll, 'rl_completion_type').value
+        return strings.decode(completion_type)
 
     def get_begidx(self):
         """Get the beginning index of the readline tab-completion
@@ -382,6 +431,8 @@ class Readline(object):
 
     def set_completer_delims(self, string):
         """Set the readline word delimiters for tab-completion."""
+        string = strings.encode(string)
+        self.logger.debug('setting completer delims: %s', string)
         p_characters = c_char_p.in_dll(self.dll,
                                        'rl_completer_word_break_characters')
         self._free(p_characters)
@@ -390,8 +441,9 @@ class Readline(object):
 
     def get_completer_delims(self):
         """Get the readline word delimiters for tab-completion."""
-        return c_char_p.in_dll(self.dll,
-                               'rl_completer_word_break_characters').value
+        delims = c_char_p.in_dll(self.dll,
+                                 'rl_completer_word_break_characters').value
+        return strings.decode(delims)
 
     def set_completion_display_matches_hook(self, function=None):
         """Set or remove the completion display function. If function
@@ -422,12 +474,14 @@ class Readline(object):
             self._completion_display_matches_hook(prefix, real_matches,
                                                   max_length)
         except Exception:  # pylint: disable=broad-except
-            pass
+            self.logger.debug('exception displaying matches')
 
     def add_history(self, line):
         """Append a line to the history buffer, as if it was the last
         line typed.
         """
+        line = strings.encode(line)
+        self.logger.debug('adding history: %s', line)
         self.dll.add_history.argtypes = [c_char_p]
         self.dll.add_history(line)
 

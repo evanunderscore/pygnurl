@@ -2,9 +2,10 @@
 
 from distutils.core import setup
 
+
 setup(
     name='pygnurl',
-    version='0.1',
+    version='0.2.0',
     description='ctypes-based Python wrapper for GNU Readline',
     author='evanunderscore',
     author_email='evanunderscore@gmail.com',

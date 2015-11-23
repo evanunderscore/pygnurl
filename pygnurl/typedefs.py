@@ -30,7 +30,8 @@ rl_hook_func_t = CFUNCTYPE(c_int)
 rl_compdisp_func_t = CFUNCTYPE(None, POINTER(c_char_p), c_int, c_int)
 
 # typedef void rl_vcpfunc_t PARAMS((char *));
-rl_vcpfunc_t = CFUNCTYPE(None, c_char_p)
+# Important that we get the raw pointer so we can free it!
+rl_vcpfunc_t = CFUNCTYPE(None, c_void_p)
 
 
 class HIST_ENTRY(Structure):  # pylint: disable=too-few-public-methods
@@ -42,6 +43,8 @@ class HIST_ENTRY(Structure):  # pylint: disable=too-few-public-methods
       histdata_t data;
     } HIST_ENTRY;
     """
-    _fields_ = [('line', c_char_p),
-                ('timestamp', c_char_p),
+    # Need to retain real pointers so we can free line/timestamp, so
+    # cannot declare these as c_char_p.
+    _fields_ = [('line', c_void_p),
+                ('timestamp', c_void_p),
                 ('data', c_void_p)]
