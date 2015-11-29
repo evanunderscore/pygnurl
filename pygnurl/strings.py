@@ -15,10 +15,10 @@ def encode(unicode_or_bytes):
     :param unicode_or_bytes: object to encode
     """
     if PY3:
-        allowed = str
+        allowed = (str,)
         name = 'str'
     else:
-        allowed = (str, unicode)
+        allowed = (str, unicode)  # pylint: disable=undefined-variable
         name = 'string'
     if not isinstance(unicode_or_bytes, allowed):
         msg = 'must be {}, not {}'.format(name,

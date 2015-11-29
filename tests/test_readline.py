@@ -15,7 +15,7 @@ print('readline: {}'.format(LIB_PATH))
 
 
 class TestReadline(unittest.TestCase):
-    """Simple tests mostly checking nothing crashes"""
+    """Simple tests mostly checking nothing crashes."""
     # pylint: disable=missing-docstring,too-many-public-methods,invalid-name
     def setUp(self):
         self.readline = pygnurl.readline.Readline(LIB_PATH)
@@ -44,13 +44,25 @@ class TestReadline(unittest.TestCase):
         self.readline.read_init_file(self.init_file_name)
         self.readline.read_init_file()
 
+        with self.assertRaises(IOError):
+            self.readline.read_init_file('/dev/null/nothing')
+
     def test_read_history_file(self):
         self.readline.read_history_file(self.history_file_name)
         # not going to deal with ~/.history
 
+        with self.assertRaises(IOError):
+            self.readline.read_history_file('/dev/null/nothing')
+
     def test_write_history_file(self):
         self.readline.write_history_file(self.history_file_name)
         # not going to deal with ~/.history
+
+        with self.assertRaises(IOError):
+            self.readline.write_history_file('/dev/null/nothing')
+
+        self.readline.set_history_length(1)
+        self.readline.write_history_file(self.history_file_name)
 
     def test_clear_history(self):
         self.readline.clear_history()
@@ -72,12 +84,20 @@ class TestReadline(unittest.TestCase):
         item = self.readline.get_history_item(length)
         self.assertEqual(item, 'test get history item')
 
+        item = self.readline.get_history_item(length + 1)
+        self.assertIsNone(item)
+
     def test_remove_history_item(self):
         self.readline.add_history('test')
         length = self.readline.get_current_history_length()
         self.readline.remove_history_item(0)
         new_length = self.readline.get_current_history_length()
         self.assertEqual(new_length, length - 1)
+
+        with self.assertRaises(ValueError):
+            self.readline.remove_history_item(-1)
+        with self.assertRaises(ValueError):
+            self.readline.remove_history_item(length)
 
     def test_replace_history_item(self):
         self.readline.add_history('test replace history item 1')
@@ -86,8 +106,14 @@ class TestReadline(unittest.TestCase):
         item = self.readline.get_history_item(1)
         self.assertEqual(item, 'test replace history item 2')
 
+        with self.assertRaises(ValueError):
+            self.readline.replace_history_item(-1, 'test')
+        with self.assertRaises(ValueError):
+            self.readline.replace_history_item(0xffff, 'test')
+
     def test_redisplay(self):
         self.readline.redisplay()
+        self.readline.redisplay(force=True)
 
     def test_set_startup_hook(self):
         self.readline.set_startup_hook(lambda: None)

@@ -196,7 +196,7 @@ class Readline(object):
             try:
                 return any(select.select([fileno], [], [], timeout))
             except select.error as error:
-                if error[0] != errno.EINTR:
+                if error.args[0] != errno.EINTR:
                     raise
 
     def _setup_readline(self):
@@ -385,7 +385,7 @@ class Readline(object):
         self.dll.remove_history.argtypes = [c_int]
         self.dll.remove_history.restype = POINTER(typedefs.HIST_ENTRY)
         p_hist_entry = self.dll.remove_history(pos)
-        if p_hist_entry is None:
+        if not p_hist_entry:
             raise ValueError('No history item at position {}'.format(pos))
         self.dll.free_history_entry.argtypes = [POINTER(typedefs.HIST_ENTRY)]
         self.dll.free_history_entry(p_hist_entry)
@@ -401,7 +401,7 @@ class Readline(object):
         self.dll.replace_history_entry.argtypes = [c_int, c_char_p, c_void_p]
         self.dll.replace_history_entry.restype = POINTER(typedefs.HIST_ENTRY)
         p_hist_entry = self.dll.replace_history_entry(pos, line, None)
-        if p_hist_entry is None:
+        if not p_hist_entry:
             raise ValueError('No history item at position {}'.format(pos))
         self.dll.free_history_entry.argtypes = [POINTER(typedefs.HIST_ENTRY)]
         self.dll.free_history_entry(p_hist_entry)
@@ -567,7 +567,7 @@ class WindowsReadline(Readline):
     def _select(self, timeout=None):
         # The Windows version of select only deals with sockets, so we
         # have to do this the hard way.
-        import msvcrt
+        import msvcrt  # pylint: disable=import-error
         start = time.time()
         while not msvcrt.kbhit():
             time.sleep(0.01)

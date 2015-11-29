@@ -1,10 +1,11 @@
 Changelog
 =========
 
-0.5.0 (2015-12-??)
+0.5.0 (2015-12-04)
 ------------------
 
 * Added sample PYTHONSTARTUP script
+* Fixed assorted minor bugs
 
 0.4.1 (2015-12-02)
 ------------------

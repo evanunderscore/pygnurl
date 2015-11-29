@@ -12,7 +12,7 @@ def get_long_description():
 
 setup(
     name='pygnurl',
-    version='0.4.1',
+    version='0.5.0',
     description='ctypes-based Python wrapper for GNU Readline',
     long_description=get_long_description(),
     author='evanunderscore',
@@ -27,7 +27,7 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Operating System :: OS Independent",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: End Users/Desktop",
     ],
