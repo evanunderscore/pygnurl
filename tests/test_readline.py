@@ -9,16 +9,16 @@ import unittest
 import pygnurl.readline
 
 # FUTURE: fix versions and run over all supported
-DLL_PATH = os.environ['PYGNURL_DLL']
+LIB_PATH = os.environ['PYGNURL_LIB']
 print('python: {}'.format(sys.version))
-print('readline: {}'.format(DLL_PATH))
+print('readline: {}'.format(LIB_PATH))
 
 
 class TestReadline(unittest.TestCase):
     """Simple tests mostly checking nothing crashes"""
     # pylint: disable=missing-docstring,too-many-public-methods,invalid-name
     def setUp(self):
-        self.readline = pygnurl.readline.Readline(DLL_PATH)
+        self.readline = pygnurl.readline.Readline(LIB_PATH)
         handle, self.init_file_name = tempfile.mkstemp()
         os.close(handle)
         handle, self.history_file_name = tempfile.mkstemp()

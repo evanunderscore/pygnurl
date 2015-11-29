@@ -1,40 +1,47 @@
+=======
 pygnurl
 =======
 
 ``pygnurl`` is a ctypes-based Python wrapper for GNU Readline intended to be
 used as a drop-in replacement for Python's built-in ``readline`` module. It is
-currently intended for Windows Python which does not ship with a ``readline``
-module by default.
+currently intended for Windows (as Python on Windows comes without a
+``readline`` module by default) and Mac OS X (as its ``readline`` module is
+implemented using libedit, not GNU Readline).
 
 ``pygnurl`` works with 32- and 64-bit Python 2 and 3.
 
 Requirements
 ------------
 
-``pygnurl`` dynamically binds to a Readline DLL, so you need a DLL matching the
-architecture of your Python interpreter (not necessarily your system). If you
-are using 32-bit Python, you can get a pre-built Windows-compatible Readline
-DLL from:
+``pygnurl`` dynamically loads a Readline library, so you need a version
+matching the architecture of your Python interpreter (not necessarily your
+system).
+
+More information on where to get Readline can be found on the Readline home
+page:
+
+http://tiswww.case.edu/php/chet/readline/rltop.html#Availability
+
+Windows users can get a pre-built 32-bit Readline DLL from:
 
 http://gnuwin32.sourceforge.net/packages/readline.htm
 
 Quick Start Guide
 -----------------
 
+Set the ``PYGNURL_LIB`` environment variable to the filename of your Readline
+library. This will be loaded using the shared library search order rules of
+your system.
+
 ::
 
     pip install pygnurl
-    set PYGNURL_DLL=X:\path\to\readline.dll
-    setx PYGNURL_DLL %PYGNURL_DLL%
     python
     >>> import rlcompleter
     >>> import readline
     >>> readline.parse_and_bind('tab: complete')
     >>> r<tab><tab>
 
-If your Readline DLL is on your path, you can specify ``PYGNURL_DLL`` by name
-only. Note that if you specify ``PYGNURL_DLL`` with a path, ``pygnurl`` won't
-be able to load it if it depends on other DLLs not on your path.
 
 Motivation
 ----------
@@ -54,13 +61,32 @@ https://github.com/evanunderscore/pygnurl
 Alternatives
 ------------
 
-pyreadline_ - A python implmentation of GNU readline. (Windows)
+readline_ - Part of the standard library. Python on Mac OS X may implement this
+using libedit instead of GNU Readline and must be configured accordingly.
+
+pyreadline_ - A python implmentation of GNU readline.
 
 gnureadline_ - The standard Python readline extension statically linked against
-the GNU readline library. (Mac OS X, Posix)
+the GNU readline library.
 
-rl_ - Alternative Python bindings for GNU Readline. (Linux, Mac OS X)
+rl_ - Alternative Python bindings for GNU Readline.
 
++---------------+-----------+---------------+---------------+
+|               | Platforms | Library       | Interfaces    |
++===============+===========+===============+===============+
+| pygnurl_      | Any       | Dynamic       | Subset        |
++---------------+-----------+---------------+---------------+
+| readline_     | Unix-like | Static        | Subset        |
++---------------+-----------+---------------+---------------+
+| pyreadline_   | Windows   | Pure Python   | Subset        |
++---------------+-----------+---------------+---------------+
+| gnureadline_  | Unix-like | Static        | Subset        |
++---------------+-----------+---------------+---------------+
+| rl_           | Unix-like | Static        | All           |
++---------------+-----------+---------------+---------------+
+
+.. _pygnurl: https://pypi.python.org/pypi/pygnurl
+.. _readline: https://docs.python.org/3/library/readline.html
 .. _pyreadline: https://pypi.python.org/pypi/pyreadline
 .. _gnureadline: https://pypi.python.org/pypi/gnureadline
 .. _rl: https://pypi.python.org/pypi/rl

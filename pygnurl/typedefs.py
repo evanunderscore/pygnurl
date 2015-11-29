@@ -43,8 +43,6 @@ class HIST_ENTRY(Structure):  # pylint: disable=too-few-public-methods
       histdata_t data;
     } HIST_ENTRY;
     """
-    # Need to retain real pointers so we can free line/timestamp, so
-    # cannot declare these as c_char_p.
-    _fields_ = [('line', c_void_p),
-                ('timestamp', c_void_p),
+    _fields_ = [('line', c_char_p),
+                ('timestamp', c_char_p),
                 ('data', c_void_p)]

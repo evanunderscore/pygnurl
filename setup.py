@@ -1,16 +1,18 @@
 #!/usr/bin/env python2
+"""Packaging script for pygnurl."""
 
 from setuptools import setup
 
 
 def get_long_description():
+    """Return the contents of README.rst."""
     with open('README.rst') as readme:
         return readme.read()
 
 
 setup(
     name='pygnurl',
-    version='0.3.0',
+    version='0.4.0',
     description='ctypes-based Python wrapper for GNU Readline',
     long_description=get_long_description(),
     author='evanunderscore',
@@ -24,8 +26,7 @@ setup(
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
-        # FUTURE: switch to "OS Independent" when tested appropriately
-        "Operating System :: Microsoft :: Windows",
+        "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Intended Audience :: End Users/Desktop",

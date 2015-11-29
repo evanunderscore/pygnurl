@@ -2,12 +2,15 @@
 
 import os
 import logging
+import sys
 import warnings
 
 from . import readline
 
 
-READLINE_FUNCTION_NAMES = [
+READLINE_ATTRIBUTE_NAMES = [
+    '_READLINE_VERSION',
+    '_READLINE_RUNTIME_VERSION',
     'parse_and_bind',
     'get_line_buffer',
     'insert_text',
@@ -64,14 +67,18 @@ def init_logging(name):
 def init_readline():
     """Initialise readline and return a dict containing required functions"""
     try:
-        dll_path = os.environ['PYGNURL_DLL']
+        dll_path = os.environ['PYGNURL_LIB']
     except KeyError:
         # issue a warning to explain the error more clearly
-        warnings.warn('pygnurl: PYGNURL_DLL environment variable not set',
+        warnings.warn('pygnurl: PYGNURL_LIB environment variable not set',
                       RuntimeWarning, 2)
         raise
-    instance = readline.Readline(dll_path)
+    if sys.platform == 'win32':
+        readline_class = readline.WindowsReadline
+    else:
+        readline_class = readline.Readline
+    instance = readline_class(dll_path)
     function_dict = {}
-    for name in READLINE_FUNCTION_NAMES:
+    for name in READLINE_ATTRIBUTE_NAMES:
         function_dict[name] = getattr(instance, name)
     return function_dict
