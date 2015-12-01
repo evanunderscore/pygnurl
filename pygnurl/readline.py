@@ -7,6 +7,7 @@ import errno
 import locale
 import logging
 import select
+import signal
 import time
 
 from . import callback_mananger
@@ -23,6 +24,16 @@ def store_locale():
         yield
     finally:
         locale.setlocale(locale.LC_CTYPE, saved_locale)
+
+
+@contextlib.contextmanager
+def ignore_sigint():
+    """Ignore SIGINT for the duration."""
+    old_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, old_handler)
 
 
 # ctypes gives many false positives for in_dll
@@ -139,8 +150,16 @@ class Readline(object):
                         break
                     if input_hook:
                         cast(input_hook, typedefs.PyOS_InputHook_t)()
-                self.logger.debug('reading single character')
-                self.dll.rl_callback_read_char()
+                # An unhandled KeyboardInterrupt in a ctypes callback
+                # function (this can call _rlhandler or _flex_complete)
+                # is a bit of a disaster. To be safe, I'm disabling the
+                # handling of SIGINT for the duration of this function
+                # call. This should return relatively quickly (unless
+                # there are an absurd amount of completion options),
+                # and I'd rather miss a Ctrl-C than crash.
+                with ignore_sigint():
+                    self.logger.debug('reading single character')
+                    self.dll.rl_callback_read_char()
         except KeyboardInterrupt:
             self.logger.debug('cleaning up after KeyboardInterrupt')
             self.dll.rl_free_line_state()

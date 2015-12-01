@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.4.1 (2015-12-02)
+------------------
+
+* Fixed a bug where Ctrl-C could crash callback functions
+
 0.4.0 (2015-11-29)
 ------------------
 

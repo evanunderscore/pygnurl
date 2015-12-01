@@ -12,7 +12,7 @@ def get_long_description():
 
 setup(
     name='pygnurl',
-    version='0.4.0',
+    version='0.4.1',
     description='ctypes-based Python wrapper for GNU Readline',
     long_description=get_long_description(),
     author='evanunderscore',
