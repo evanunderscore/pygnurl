@@ -19,7 +19,7 @@ setup(
     author_email='evanunderscore@gmail.com',
     url='https://pypi.python.org/pypi/pygnurl',
     license='GNU General Public License v2',
-    packages=['pygnurl'],
+    packages=['pygnurl', 'pygnurl.scripts'],
     py_modules=['readline'],
     classifiers=[
         "Programming Language :: Python",

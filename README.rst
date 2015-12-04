@@ -42,6 +42,11 @@ your system.
     >>> readline.parse_and_bind('tab: complete')
     >>> r<tab><tab>
 
+If you set the ``PYTHONSTARTUP`` environment variable to a Python file, it will
+be run every time you start the interpreter. An example startup file giving tab
+completion and saved history is provided in ``pygnurl/scripts/startup.py``. You
+can point the environment variable directly at this file, or you can copy it
+elsewhere and modify it to suit your needs.
 
 Motivation
 ----------

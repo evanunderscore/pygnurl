@@ -71,7 +71,7 @@ def init_readline():
     except KeyError:
         # issue a warning to explain the error more clearly
         warnings.warn('pygnurl: PYGNURL_LIB environment variable not set',
-                      RuntimeWarning, 2)
+                      RuntimeWarning)
         raise
     if sys.platform == 'win32':
         readline_class = readline.WindowsReadline
