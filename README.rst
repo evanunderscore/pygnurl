@@ -90,6 +90,14 @@ rl_ - Alternative Python bindings for GNU Readline.
 | rl_           | Unix-like | Static        | All           |
 +---------------+-----------+---------------+---------------+
 
+Known Bugs
+----------
+
+- ANSI color codes in the IPython terminal are not able to be printed. As a
+  workaround, the codes are stripped and a plain prompt is displayed instead.
+- libreadline6 from MinGW lags behind one keystroke when using the arrow keys.
+  This appears to be related to the Readline callback interface.
+
 .. _pygnurl: https://pypi.python.org/pypi/pygnurl
 .. _readline: https://docs.python.org/3/library/readline.html
 .. _pyreadline: https://pypi.python.org/pypi/pyreadline

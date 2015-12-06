@@ -576,3 +576,41 @@ class WindowsReadline(Readline):
                 if elapsed > timeout:
                     return False
         return True
+
+    def _call_readline(self, stdin, stdout, prompt):
+        # IPython expects pyreadline to handle ANSI color codes. We can
+        # offload most of this work to colorama, but the printing of
+        # the prompt happens inside the DLL where we can't get to it.
+        # I tried experimenting with printing the prompt myself and
+        # using rl_already_prompted, but this has a number of issues:
+        #   * IPython has a newline in the prompt which doesn't seem to
+        #       be handled well
+        #   * This only helps us the first time the prompt is printed;
+        #       if Readline updates the display itself (like after
+        #       printing completion matches), this doesn't work.
+        # Could look into providing our own rl_redisplay_function, but
+        # the default rl_redisplay does quite a lot of work, so I'm not
+        # game to touch that right now.
+        # For now, I'm just stripping the color codes and printing a
+        # boring prompt.
+        prompt = self._strip_ansi(prompt)
+        return super(WindowsReadline, self)._call_readline(stdin, stdout,
+                                                           prompt)
+
+    @staticmethod
+    def _strip_ansi(text):
+        """Strip any ANSI color codes from the text.
+
+        This function is heavily borrowed from colorama.
+        See colorama.ansitowin32.AnsiToWin32.write_and_convert.
+        """
+        import colorama.ansitowin32
+        stripped = ''
+        cursor = 0
+        matches = colorama.ansitowin32.AnsiToWin32.ANSI_CSI_RE.finditer(text)
+        for match in matches:
+            start, end = match.span()
+            stripped += text[cursor:start]
+            cursor = end
+        stripped += text[cursor:]
+        return stripped

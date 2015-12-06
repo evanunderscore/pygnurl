@@ -52,6 +52,8 @@ def init_logging(name):
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
+    if '_PYGNURL_DEBUG' in os.environ:
+        logger.setLevel(logging.DEBUG)
 
     try:
         filename = os.environ['_PYGNURL_LOGFILE']
