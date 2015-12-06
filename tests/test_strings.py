@@ -26,6 +26,12 @@ class TestStrings(unittest.TestCase):
         # This differs by version.
         raise NotImplementedError
 
+    def test_strip_ansi_from_bytes(self):
+        ipython_prompt = b'\n\x01\x1b[0;32m\x02In [\x01\x1b[1;32m\x021' \
+                         b'\x01\x1b[0;32m\x02]: \x01\x1b[0m\x02'
+        prompt = pygnurl.strings.strip_ansi_from_bytes(ipython_prompt)
+        self.assertEqual(prompt, b'\nIn [1]: ')
+
 
 class TestStrings2(TestStrings):
     """Test string conversion functions for Python 2"""

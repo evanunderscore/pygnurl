@@ -1,7 +1,12 @@
 """Simple string conversion utilities for Python 2 and 3."""
+import re
 import sys
 
-PY3 = sys.version_info.major == 3
+PY3 = sys.version_info.major >= 3
+# Borrowed from colorama.ansitowin32.AnsiToWin32.ANSI_CSI_RE.
+# (This one is always bytes.)
+# pylint: disable=anomalous-backslash-in-string
+ANSI_CSI_RE = re.compile(b'\001?\033\[((?:\d|;)*)([a-zA-Z])\002?')
 
 
 def encode(unicode_or_bytes):
@@ -47,3 +52,20 @@ def decode(bytes_or_str):
         return bytes_or_str.decode()
     else:
         return bytes_or_str
+
+
+def strip_ansi_from_bytes(text):
+    """Strip any ANSI color codes from the text.
+
+    This function is heavily borrowed from colorama.
+    See colorama.ansitowin32.AnsiToWin32.write_and_convert.
+    """
+    stripped = b''
+    cursor = 0
+    matches = ANSI_CSI_RE.finditer(text)
+    for match in matches:
+        start, end = match.span()
+        stripped += text[cursor:start]
+        cursor = end
+    stripped += text[cursor:]
+    return stripped

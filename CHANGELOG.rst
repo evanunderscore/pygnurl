@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.6.1 (2015-12-06)
+------------------
+
+* Fixed a bug where IPython printed a traceback after an output line on Windows
+* Fixed compatibility with IPython on Python 3 on Windows
+
 0.6.0 (2015-12-06)
 ------------------
 

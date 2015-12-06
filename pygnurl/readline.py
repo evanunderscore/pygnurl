@@ -593,24 +593,8 @@ class WindowsReadline(Readline):
         # game to touch that right now.
         # For now, I'm just stripping the color codes and printing a
         # boring prompt.
-        prompt = self._strip_ansi(prompt)
+        self.logger.debug('stripping prompt: %s', prompt)
+        prompt = strings.strip_ansi_from_bytes(prompt)
+        self.logger.debug('stripped prompt: %s', prompt)
         return super(WindowsReadline, self)._call_readline(stdin, stdout,
                                                            prompt)
-
-    @staticmethod
-    def _strip_ansi(text):
-        """Strip any ANSI color codes from the text.
-
-        This function is heavily borrowed from colorama.
-        See colorama.ansitowin32.AnsiToWin32.write_and_convert.
-        """
-        import colorama.ansitowin32
-        stripped = ''
-        cursor = 0
-        matches = colorama.ansitowin32.AnsiToWin32.ANSI_CSI_RE.finditer(text)
-        for match in matches:
-            start, end = match.span()
-            stripped += text[cursor:start]
-            cursor = end
-        stripped += text[cursor:]
-        return stripped

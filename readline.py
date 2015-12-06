@@ -19,6 +19,15 @@ def setup():
         colorama.initialise.init()
         colorama.initialise.deinit()
         output_file = colorama.initialise.wrapped_stdout
+        # colorama is proxying method calls using __getattr__ but
+        # IPython.utils.io.IOStream is looking through the dir, so we
+        # have to promote any proxied attributes to real ones.
+        # pylint: disable=protected-access,no-member
+        wrapped = output_file._StreamWrapper__wrapped
+        for attr in dir(wrapped):
+            if attr not in dir(output_file):
+                proxied = getattr(output_file, attr)
+                setattr(output_file, attr, proxied)
         globals()['GetOutputFile'] = lambda: output_file
 
 setup()
