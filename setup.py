@@ -12,14 +12,14 @@ def get_long_description():
 
 setup(
     name='pygnurl',
-    version='0.6.1',
+    version='0.7.0',
     description='ctypes-based Python wrapper for GNU Readline',
     long_description=get_long_description(),
     author='evanunderscore',
     author_email='evanunderscore@gmail.com',
     url='https://pypi.python.org/pypi/pygnurl',
     license='GNU General Public License v2',
-    packages=['pygnurl', 'pygnurl.scripts'],
+    packages=['pygnurl', 'pygnurl.modules', 'pygnurl.scripts'],
     py_modules=['readline'],
     extras_require={
         ':sys_platform=="win32"': ['colorama'],

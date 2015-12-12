@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.7.0 (2015-12-??)
+------------------
+
+* Reorganised package to expose the Readline instance at ``pygnurl.readline``
+
 0.6.1 (2015-12-06)
 ------------------
 

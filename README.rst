@@ -33,6 +33,13 @@ Set the ``PYGNURL_LIB`` environment variable to the filename of your Readline
 library. This will be loaded using the shared library search order rules of
 your system.
 
+If your version of Python already has a ``readline`` module, you will need to
+do one of the following things to let ``pygnurl`` override it:
+
+#. Add ``<site-packages>/pygnurl/modules`` to your ``PYTHONPATH`` environment
+   variable
+#. Install using ``easy_install`` instead of ``pip``
+
 ::
 
     pip install pygnurl

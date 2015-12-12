@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 
-import pygnurl.readline
+import pygnurl.bindings
 
 # FUTURE: fix versions and run over all supported
 LIB_PATH = os.environ['PYGNURL_LIB']
@@ -18,7 +18,7 @@ class TestReadline(unittest.TestCase):
     """Simple tests mostly checking nothing crashes."""
     # pylint: disable=missing-docstring,too-many-public-methods,invalid-name
     def setUp(self):
-        self.readline = pygnurl.readline.Readline(LIB_PATH)
+        self.readline = pygnurl.bindings.Readline(LIB_PATH)
         handle, self.init_file_name = tempfile.mkstemp()
         os.close(handle)
         handle, self.history_file_name = tempfile.mkstemp()
