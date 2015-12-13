@@ -49,6 +49,10 @@ do one of the following things to let ``pygnurl`` override it:
     >>> readline.parse_and_bind('tab: complete')
     >>> r<tab><tab>
 
+If you are using Python 3.4 or later, completion and history will be set up for
+you automatically. If you are using an older version, you will need to set this
+up yourself.
+
 If you set the ``PYTHONSTARTUP`` environment variable to a Python file, it will
 be run every time you start the interpreter. An example startup file giving tab
 completion and saved history is provided in ``pygnurl/scripts/startup.py``. You

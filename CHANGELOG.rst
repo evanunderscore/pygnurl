@@ -1,10 +1,11 @@
 Changelog
 =========
 
-0.7.0 (2015-12-??)
+0.7.0 (2015-12-13)
 ------------------
 
 * Reorganised package to expose the Readline instance at ``pygnurl.readline``
+* Updated PYTHONSTARTUP script to deconflict with ``sys.__interactivehook__``
 
 0.6.1 (2015-12-06)
 ------------------
