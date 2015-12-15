@@ -33,6 +33,9 @@ rl_compdisp_func_t = CFUNCTYPE(None, POINTER(c_char_p), c_int, c_int)
 # Important that we get the raw pointer so we can free it!
 rl_vcpfunc_t = CFUNCTYPE(None, c_void_p)
 
+# typedef int rl_command_func_t PARAMS((int, int));
+rl_command_func_t = CFUNCTYPE(c_int, c_int, c_int)
+
 
 class HIST_ENTRY(Structure):  # pylint: disable=too-few-public-methods
     """The structure used to store a history entry.

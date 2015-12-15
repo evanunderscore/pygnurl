@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import contextlib
 from ctypes import *  # pylint: disable=wildcard-import,unused-wildcard-import
 import errno
+import functools
 import locale
 import logging
 import select
@@ -61,6 +62,8 @@ class Readline(object):
         self._completed_input_string = None
         self._input_complete = False
         self._completer_delims = None
+        self._functions = {}
+        self._function_wrappers = {}
 
         # String constant we need to keep a reference to
         self._PYTHON = b'python'
@@ -237,7 +240,8 @@ class Readline(object):
             try:
                 return int(hook())
             except Exception:  # pylint: disable=broad-except
-                self.logger.debug('exception in hook')
+                self.logger.exception('exception calling hook')
+                self._redisplay_after_log(logging.ERROR)
                 return -1
         return 0
 
@@ -269,7 +273,8 @@ class Readline(object):
                 self.logger.debug('returning completion: %s', result)
                 return self._strdup(result)
             except Exception:  # pylint: disable=broad-except
-                self.logger.debug('exception calling completer')
+                self.logger.exception('exception calling completer')
+                self._redisplay_after_log(logging.ERROR)
         return None
 
     def parse_and_bind(self, string):
@@ -511,7 +516,8 @@ class Readline(object):
             self._completion_display_matches_hook(prefix, real_matches,
                                                   max_length)
         except Exception:  # pylint: disable=broad-except
-            self.logger.debug('exception displaying matches')
+            self.logger.exception('exception displaying matches')
+            self._redisplay_after_log(logging.ERROR)
 
     def add_history(self, line):
         """Append a line to the history buffer, as if it was the last
@@ -521,6 +527,44 @@ class Readline(object):
         self.logger.debug('adding history: %s', line)
         self.dll.add_history.argtypes = [c_char_p]
         self.dll.add_history(line)
+
+    def add_function(self, name, function):
+        """Add or overwrite a bindable named function. The function
+        can be referenced by name in an initialization file or in
+        a call to readline.parse_and_bind. The function is called as
+        function(count, key) where count is the numeric argument (or 1
+        if defaulted) and key is the key that invoked the function.
+        The function should return 0 on success or a non-zero value if
+        some error occurs.
+        """
+        name = strings.encode(name)
+        # Wrapper functions will retrieve Python functions from this
+        # dict by name. Note that this also stores a reference to name
+        # so it does not get GC'd.
+        self._functions[name] = function
+        if name in self._function_wrappers:
+            self.logger.debug('function wrapper exists for %d', name)
+            return
+        self.logger.debug('registering function wrapper for %d', name)
+        _wrapper = functools.partial(self._on_function, name)
+        wrapper = typedefs.rl_command_func_t(_wrapper)
+        # Save off the wrapper so that it doesn't get GC'd and we know
+        # not to create it again.
+        self._function_wrappers[name] = wrapper
+        self.dll.rl_add_defun.argtypes = [c_char_p, c_void_p, c_int]
+        self.dll.rl_add_defun(name, wrapper, -1)
+
+    def _on_function(self, name, count, key):
+        """Call the function registered for name, passing count and key
+        as parameters.
+        """
+        self.logger.debug('calling function for name %s', name)
+        try:
+            return int(self._functions[name](count, key))
+        except Exception:  # pylint: disable=broad-except
+            self.logger.exception('exception in function %s', name)
+            self._redisplay_after_log(logging.ERROR)
+            return -1
 
     def _malloc(self, size):
         """Allocate memory and return its address."""
@@ -547,6 +591,13 @@ class Readline(object):
         dup = self._malloc(size)
         memmove(dup, string, size)
         return dup
+
+    def _redisplay_after_log(self, level):
+        """Update the display only if the logger would have written to
+        the console at the given level.
+        """
+        if level >= self.logger.getEffectiveLevel():
+            self.redisplay(force=True)
 
 
 class WindowsReadline(Readline):

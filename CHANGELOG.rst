@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.8.0 (2015-12-??)
+------------------
+
+* Added ``add_function`` for registering custom bindable functions
+
 0.7.0 (2015-12-13)
 ------------------
 

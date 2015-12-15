@@ -6,6 +6,11 @@ import sys
 import tempfile
 import unittest
 
+try:
+    from unittest import mock
+except ImportError:
+    import mock
+
 import pygnurl.bindings
 
 # FUTURE: fix versions and run over all supported
@@ -17,6 +22,7 @@ print('readline: {}'.format(LIB_PATH))
 class TestReadline(unittest.TestCase):
     """Simple tests mostly checking nothing crashes."""
     # pylint: disable=missing-docstring,too-many-public-methods,invalid-name
+    # pylint: disable=protected-access
     def setUp(self):
         self.readline = pygnurl.bindings.Readline(LIB_PATH)
         handle, self.init_file_name = tempfile.mkstemp()
@@ -160,3 +166,15 @@ class TestReadline(unittest.TestCase):
 
     def test_add_history(self):
         self.readline.add_history('test')
+
+    def test_add_function(self):
+        function = mock.Mock()
+        function.return_value = 789
+
+        self.readline.add_function('test-function', function)
+        ret = self.readline._function_wrappers[b'test-function'](123, 456)
+        self.assertTrue(function.called_with(123, 456))
+        self.assertEqual(ret, 789)
+
+        ret = self.readline._on_function('no-function', 123, 456)
+        self.assertEqual(ret, -1)

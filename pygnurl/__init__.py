@@ -29,15 +29,22 @@ def _init_logging():
     logging.getLogger(__name__).
     """
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+
+    if '_PYGNURL_DEBUG' in os.environ:
+        # Extremely verbose; intended for internal development only.
+        logger.setLevel(logging.DEBUG)
+    elif 'PYGNURL_DEBUG' in os.environ:
+        # More useful for users writing callback functions.
+        logger.setLevel(logging.INFO)
+    else:
+        # The end user won't want to see any messages at all.
+        logger.setLevel(logging.CRITICAL)
 
     formatter = logging.Formatter('%(module)s.%(funcName)s: %(message)s')
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-    if '_PYGNURL_DEBUG' in os.environ:
-        logger.setLevel(logging.DEBUG)
 
     try:
         filename = os.environ['_PYGNURL_LOGFILE']
@@ -47,6 +54,8 @@ def _init_logging():
         logger.debug('using log file %s', filename)
         file_handler = logging.FileHandler(filename)
         file_handler.setFormatter(formatter)
+        # Can be as verbose as we like when logging to file.
+        file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
 _init_logging()
 
