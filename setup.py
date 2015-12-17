@@ -12,7 +12,7 @@ def get_long_description():
 
 setup(
     name='pygnurl',
-    version='0.7.0',
+    version='0.8.0',
     description='ctypes-based Python wrapper for GNU Readline',
     long_description=get_long_description(),
     author='evanunderscore',
@@ -22,7 +22,7 @@ setup(
     packages=['pygnurl', 'pygnurl.modules', 'pygnurl.scripts'],
     py_modules=['readline'],
     extras_require={
-        ':sys_platform=="win32"': ['colorama'],
+        ':sys_platform=="win32"': ['colorama>=0.3.5'],
     },
     classifiers=[
         "Programming Language :: Python",
