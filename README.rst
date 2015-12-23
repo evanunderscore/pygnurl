@@ -2,13 +2,15 @@
 pygnurl
 =======
 
-``pygnurl`` is a ctypes-based Python wrapper for GNU Readline intended to be
-used as a drop-in replacement for Python's built-in ``readline`` module. It is
-currently intended for Windows (as Python on Windows comes without a
-``readline`` module by default) and Mac OS X (as its ``readline`` module is
-implemented using libedit, not GNU Readline).
+``pygnurl`` is a dynamic GNU Readline interface. It provides:
 
-``pygnurl`` works with 32- and 64-bit Python 2 and 3.
+- A Pythonic interface similar to ``rl`` for ease of use
+- An interface to custom bindable functions
+- A ``readline`` compatibility layer for existing code
+
+You should use ``pygnurl`` if you specifically want to use GNU Readline from
+your Python program. If you are just looking for tools to help you build a
+command line interface, you may prefer prompt_toolkit_.
 
 Requirements
 ------------
@@ -17,21 +19,23 @@ Requirements
 matching the architecture of your Python interpreter (not necessarily your
 system).
 
-More information on where to get Readline can be found on the Readline home
-page:
+Linux users should already have Readline as part of the standard library.
+``pygnurl`` uses this version by default.
 
-http://tiswww.case.edu/php/chet/readline/rltop.html#Availability
+Windows users can get a pre-built 32-bit Readline DLL from `gnuwin32
+<http://gnuwin32.sourceforge.net/packages/readline.htm>`_.
 
-Windows users can get a pre-built 32-bit Readline DLL from:
-
-http://gnuwin32.sourceforge.net/packages/readline.htm
+More information on where to get Readline can be found on the `Readline home
+page <http://tiswww.case.edu/php/chet/readline/rltop.html#Availability>`_.
 
 Quick Start Guide
 -----------------
 
+Install ``pygnurl`` using ``pip install pygnurl``.
+
 Set the ``PYGNURL_LIB`` environment variable to the filename of your Readline
 library. This will be loaded using the shared library search order rules of
-your system.
+your system. (Linux users can skip this step to use the system version).
 
 If your version of Python already has a ``readline`` module, you will need to
 do one of the following things to let ``pygnurl`` override it:
@@ -40,24 +44,33 @@ do one of the following things to let ``pygnurl`` override it:
    variable
 #. Install using ``easy_install`` instead of ``pip``
 
+If you are using Python 3.4 or later, completion and history will be set up for
+you automatically. If you are using an older version, you will need to set this
+up yourself.
+
 ::
 
-    pip install pygnurl
-    python
     >>> import rlcompleter
     >>> import readline
     >>> readline.parse_and_bind('tab: complete')
     >>> r<tab><tab>
 
-If you are using Python 3.4 or later, completion and history will be set up for
-you automatically. If you are using an older version, you will need to set this
-up yourself.
+Examples
+--------
 
-If you set the ``PYTHONSTARTUP`` environment variable to a Python file, it will
-be run every time you start the interpreter. An example startup file giving tab
-completion and saved history is provided in ``pygnurl/scripts/startup.py``. You
-can point the environment variable directly at this file, or you can copy it
-elsewhere and modify it to suit your needs.
+``pygnurl/examples/startup.py`` - An example startup file suitable for everyday
+use. Point the ``PYTHONSTARTUP`` environment variable at this file to
+automatically get tab completion and saved history in your interpreter. (If you
+are using Python 3.4 or later, you do not need to use this example.)
+
+``pygnurl/examples/functions.py`` - An example startup file demostrating a
+custom bindable command. You must also use this with the ``PYTHONSTARTUP``
+environment variable. Run ``help(pygnurl.examples.functions)`` for more
+information.
+
+``pygnurl/examples/mycmd.py`` - A simple command line showing tab completion
+capabilities. The argument to ``cat`` is completed based on your local
+filesystem.
 
 Motivation
 ----------
@@ -87,19 +100,24 @@ the GNU readline library.
 
 rl_ - Alternative Python bindings for GNU Readline.
 
-+---------------+-----------+---------------+---------------+
-|               | Platforms | Library       | Interfaces    |
-+===============+===========+===============+===============+
-| pygnurl_      | Any       | Dynamic       | Subset        |
-+---------------+-----------+---------------+---------------+
-| readline_     | Unix-like | Static        | Subset        |
-+---------------+-----------+---------------+---------------+
-| pyreadline_   | Windows   | Pure Python   | Subset        |
-+---------------+-----------+---------------+---------------+
-| gnureadline_  | Unix-like | Static        | Subset        |
-+---------------+-----------+---------------+---------------+
-| rl_           | Unix-like | Static        | All           |
-+---------------+-----------+---------------+---------------+
+prompt_toolkit_ - Library for building powerful interactive command lines in
+Python.
+
++-------------------+-----------+---------------+---------------+
+|                   | Platforms | Library       | Interface     |
++===================+===========+===============+===============+
+| pygnurl_          | Any       | Dynamic       | Extended      |
++-------------------+-----------+---------------+---------------+
+| readline_         | Unix-like | Static        | Basic         |
++-------------------+-----------+---------------+---------------+
+| pyreadline_       | Windows   | Pure Python   | Basic         |
++-------------------+-----------+---------------+---------------+
+| gnureadline_      | Unix-like | Static        | Basic         |
++-------------------+-----------+---------------+---------------+
+| rl_               | Unix-like | Static        | Extended      |
++-------------------+-----------+---------------+---------------+
+| prompt_toolkit_   | Any       | Pure Python   | Alternative   |
++-------------------+-----------+---------------+---------------+
 
 Known Bugs
 ----------
@@ -114,3 +132,4 @@ Known Bugs
 .. _pyreadline: https://pypi.python.org/pypi/pyreadline
 .. _gnureadline: https://pypi.python.org/pypi/gnureadline
 .. _rl: https://pypi.python.org/pypi/rl
+.. _prompt_toolkit: https://pypi.python.org/pypi/prompt_toolkit

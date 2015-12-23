@@ -12,18 +12,22 @@ def get_long_description():
 
 setup(
     name='pygnurl',
-    version='0.8.0',
-    description='ctypes-based Python wrapper for GNU Readline',
+    version='1.0.0',
+    description='Dynamic GNU Readline interface',
     long_description=get_long_description(),
     author='evanunderscore',
     author_email='evanunderscore@gmail.com',
     url='https://pypi.python.org/pypi/pygnurl',
     license='GNU General Public License v2',
-    packages=['pygnurl', 'pygnurl.modules', 'pygnurl.scripts'],
+    packages=['pygnurl', 'pygnurl.modules', 'pygnurl.examples'],
     py_modules=['readline'],
     extras_require={
         ':sys_platform=="win32"': ['colorama>=0.3.5'],
     },
+    tests_require=[
+        'coverage',
+        'nose',
+    ],
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",

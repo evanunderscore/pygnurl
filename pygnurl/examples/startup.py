@@ -74,4 +74,4 @@ def startup():
 if __name__ == '__main__':
     startup()
     del startup
-    del __doc__
+    del __doc__  # pylint: disable=redefined-builtin

@@ -13,5 +13,6 @@ before_script:
   # when osx is supported, will need to brew install readline
 script:
   - pylint pygnurl -d locally-disabled -r n
+  - pylint tests -d locally-disabled -r n
   - python -m unittest discover tests
   - python setup.py sdist bdist_wheel

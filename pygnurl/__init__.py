@@ -1,4 +1,5 @@
-"""pygnurl: ctypes-based Python wrapper for GNU Readline"""
+"""pygnurl: Dynamic GNU Readline interface."""
+import ctypes
 import importlib
 import logging
 import os
@@ -14,12 +15,41 @@ import sys
 # interpreter itself does it and it suppresses the traceback, the user
 # will get no useful information unless I add in this workaround.
 # See https://bugs.python.org/issue17716.
-# pylint: disable=invalid-name
-# from . import bindings
-bindings = importlib.import_module('pygnurl.bindings')
-# from . import errors
-errors = importlib.import_module('pygnurl.errors')
-# pylint: enable=invalid-name
+try:
+    from . import interface
+    from . import errors
+except ImportError:
+    # pylint: disable=invalid-name
+    interface = importlib.import_module('pygnurl.interface')
+    errors = importlib.import_module('pygnurl.errors')
+
+readline = None  # pylint: disable=invalid-name
+
+
+class ConsoleHandler(logging.StreamHandler):
+    """Readline-aware StreamHandler.
+
+    Will add new lines and update display as required.
+    """
+    def format(self, record):
+        """If accepting input, add a new line to the record."""
+        msg = super(ConsoleHandler, self).format(record)
+        if self._is_reading():
+            msg = '\n' + msg
+        return msg
+
+    def emit(self, record):
+        """If accepting input, update the display after logging."""
+        super(ConsoleHandler, self).emit(record)
+        if self._is_reading():
+            readline.forced_update_display()
+
+    @staticmethod
+    def _is_reading():
+        """Return True if Readline is currently reading a line."""
+        # The logger may be written to before readline has been fully
+        # initialized and assigned to this variable.
+        return readline and not readline.done
 
 
 def _init_logging():
@@ -42,35 +72,50 @@ def _init_logging():
 
     formatter = logging.Formatter('%(module)s.%(funcName)s: %(message)s')
 
-    console_handler = logging.StreamHandler()
+    console_handler = ConsoleHandler()
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-
-    try:
-        filename = os.environ['_PYGNURL_LOGFILE']
-    except KeyError:
-        logger.debug('_PYGNURL_LOGFILE not set; not logging to file')
-    else:
-        logger.debug('using log file %s', filename)
-        file_handler = logging.FileHandler(filename)
-        file_handler.setFormatter(formatter)
-        # Can be as verbose as we like when logging to file.
-        file_handler.setLevel(logging.DEBUG)
-        logger.addHandler(file_handler)
 _init_logging()
 
 
-def _init_readline():
-    """Return a Readline instance for the current platform."""
-    if 'PYGNURL_LIB' not in os.environ:
-        msg = 'PYGNURL_LIB environment variable not set'
-        raise errors.ConfigurationError(msg)
-    lib_filename = os.environ['PYGNURL_LIB']
+def _load_library():
+    """Load and return the Readline shared library.
 
-    if sys.platform == 'win32':
-        readline_class = bindings.WindowsReadline
+    The name is taken from the PYGNURL_LIB environment variable or a
+    platform-specific default if one exists.
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        environ_lib = os.environ['PYGNURL_LIB']
+    except KeyError:
+        pass
     else:
-        readline_class = bindings.Readline
+        logger.info('using environment library %s', environ_lib)
+        return ctypes.cdll.LoadLibrary(environ_lib)
 
-    return readline_class(lib_filename)
-readline = _init_readline()  # pylint: disable=invalid-name
+    default_lib = None
+    if sys.platform.startswith('linux'):
+        default_lib = 'libreadline.so.6'
+
+    if default_lib is not None:
+        logger.info('using default library %s', default_lib)
+        try:
+            return ctypes.cdll.LoadLibrary(default_lib)
+        except OSError:
+            logger.exception()
+
+    msg = 'PYGNURL_LIB environment variable not set and no default found'
+    raise errors.ConfigurationError(msg)
+
+
+def _init_readline(dll):
+    """Return a Readline instance for the current platform.
+
+    :rtype: pygnurl.interface.Readline
+    """
+    if sys.platform == 'win32':
+        return interface.WindowsReadline(dll)
+    else:
+        return interface.Readline(dll)
+readline = _init_readline(_load_library())  # pylint: disable=invalid-name

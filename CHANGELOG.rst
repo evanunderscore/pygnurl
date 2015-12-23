@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.0 (2016-02-06)
+------------------
+
+* Added Pythonic interface to Readline functions and variables
+* Added Readline-aware logging handler
+
 0.8.0 (2015-12-22)
 ------------------
 
