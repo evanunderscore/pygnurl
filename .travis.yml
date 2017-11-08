@@ -7,7 +7,7 @@ os:
   - linux
   # osx doesn't support Python yet
 install:
-  - pip install pylint
+  - pip install 'pylint<1.6'
 before_script:
   - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then export PYGNURL_LIB=libreadline.so.6; fi
   # when osx is supported, will need to brew install readline

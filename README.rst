@@ -2,6 +2,9 @@
 pygnurl
 =======
 
+**Disclaimer:** This project is no longer maintained. I do not intend to add
+any new features or fix bugs in 1.x. I *may* fix bugs in 0.8.x if requested.
+
 ``pygnurl`` is a dynamic GNU Readline interface. It provides:
 
 - A Pythonic interface similar to ``rl`` for ease of use
